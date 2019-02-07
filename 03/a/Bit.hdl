@@ -13,6 +13,7 @@ CHIP Bit {
     IN in, load;
     OUT out;
 
-    PARTS:
-    // Put your code here:
+    PARTS:	
+    DFF(in=nochange, out=yesdff, out=out);	
+    Mux(a=yesdff, b=in, sel=load, out=nochange);
 }
