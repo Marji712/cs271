@@ -39,5 +39,31 @@ CHIP CPU {
         pc[15];          // address of next instruction
 
     PARTS:
-    // Put your code here:
+    Or(a=outzero, b=outneg, out=zeroorless);                                                                        //make some conditions for jumping
+    Not(in=zeroorless, out=outpos);
+
+    And(a=instruction[0], b=outpos, out=jump1);                                                                     //use jump bits and conditions to decide to jump         
+    And(a=instruction[1], b=outzero, out=jump2);
+    And(a=instruction[2], b=outneg, out=jump3);
+    Or(a=jump1, b=jump2, out=jump4);
+    Or(a=jump4, b=jump3, out=jump);
+    And(a=jump, b=instruction[15], out=finaljump);
+
+    PC(in=outrega, load=finaljump, inc=true, reset=reset, out[0..14]=pc);                                                    
+
+    Mux16(a=instruction, b=aluout, sel=instruction[15], out=instructmux);                                            //if C-instruction send new data; otherwise use feedback
+ 
+    Mux16(a=outrega, b=inM , sel=instruction[12], out=aorm);                                                          //if a=0, use A reg; otherwise use M
+
+    ALU(x=outregd, y=aorm, zx=instruction[11], nx=instruction[10], zy=instruction[9], ny=instruction[8], 
+    f=instruction[7], no=instruction[6], out=outM, out=aluout, zr=outzero, ng=outneg);
+    
+    And(a=instruction[4], b=instruction[15], out=dload);
+    DRegister(in=aluout, load=dload, out=outregd);                                                                     //use dest bit to determine if using D reg
+
+    Not(in=instruction[15], out=ainstr);                                                                                //out=1 if A-instruction                                                                //out=1 if C-instruction AND storing to A reg    
+    Or(a=ainstr, b=instruction[5], out=aload);                                                                          //either an A-instruction, or dest is A reg
+    ARegister(in=instructmux, load=aload, out=outrega, out[0..14]=addressM);                                               
+
+    And(a=instruction[3], b=instruction[15], out=writeM);                                                              //use dest bit to determine if writeM
 }
